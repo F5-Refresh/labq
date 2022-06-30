@@ -67,7 +67,7 @@ class SeoulSewerLevelRainFallView(APIView):
         rianfall_data = rianfall_response['ListRainfallService']['row']
 
         """
-        SewerLevel GET API
+        WaterLevel GET API
         """
         gu_id = dict_gu_id[gu_name]
 
@@ -91,18 +91,22 @@ class SeoulSewerLevelRainFallView(APIView):
         RianFallData
         """
         rianfall_by_raingauge_dict = {
-            i: round(sum(map(lambda x: float(x['RAINFALL10']), j)), 2)
+            i: round(sum(map(
+                        lambda x: float(x['RAINFALL10']) 
+                        if re.sub('[-:\s]', '', x['RECEIVE_TIME'])[:10] == before_onehour_date else 0, 
+                        j)
+                    ),
+                2,)
             for i, j in rianfall_groupby_raingauge
-            for k in j
-            if re.sub('[-:\s]', '', k['RECEIVE_TIME'])[:10] == before_onehour_date
         }
 
         rianfall_by_raingauge = []
+
         for i, j in rianfall_by_raingauge_dict.items():
             rianfall_by_raingauge.append({'raingauge_name': i, 'sum_rain_fall': j})
-
+            
         """
-        SewerLevelData
+        WaterLevelData
         """
         waterlevel_by_hour = round(statistics.mean([i['MEA_WAL'] for i in waterlevel_data]), 2)
 
@@ -112,6 +116,7 @@ class SeoulSewerLevelRainFallView(APIView):
             'raingauge_info': rianfall_by_raingauge,
         }
         serializer = SeoulSewerLevelRainFall(data=data)
+
         if not serializer.is_valid():
             Response({'detail': 'Server Error!'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
