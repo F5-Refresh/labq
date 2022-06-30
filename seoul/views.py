@@ -40,8 +40,8 @@ dict_gu_id = {
     '강동구': '25',
 }
 
-
 OPEN_API_KEY = os.environ.get('OPEN_API_SECRET_KEY')
+
 
 # Create your views here.
 class SeoulSewerLevelRainFallView(APIView):
@@ -61,7 +61,7 @@ class SeoulSewerLevelRainFallView(APIView):
         rianfall_URL = f'http://openapi.seoul.go.kr:8088/{OPEN_API_KEY}/json/ListRainfallService/1/100/{gu_name}'
         rianfall_response = json.loads(requests.get(rianfall_URL).content)
 
-        if 'RESULT' in rianfall_response:
+        if not 'ListRainfallService' in rianfall_response:
             return Response({'detail': 'Not Found Data'}, status=status.HTTP_200_OK)
 
         rianfall_data = rianfall_response['ListRainfallService']['row']
@@ -74,7 +74,7 @@ class SeoulSewerLevelRainFallView(APIView):
         waterlevel_URL = f'http://openAPI.seoul.go.kr:8088/{OPEN_API_KEY}/json/DrainpipeMonitoringInfo/1/1000/{gu_id}/{before_onehour_date}/{before_onehour_date}'
         waterlevel_response = json.loads(requests.get(waterlevel_URL).content)
 
-        if 'RESULT' in waterlevel_response:
+        if not 'DrainpipeMonitoringInfo' in waterlevel_response:
             return Response({'detail': 'Not Found Data'}, status=status.HTTP_200_OK)
 
         waterlevel_data = waterlevel_response['DrainpipeMonitoringInfo']['row']
@@ -82,8 +82,6 @@ class SeoulSewerLevelRainFallView(APIView):
         """
         Group by
         """
-        # rianfall_groupby_datetime = groupby(rianfall_data, lambda x: re.sub("[-:\s]", "", x["RECEIVE_TIME"])[:10])
-
         rianfall_groupby_raingauge = groupby(
             sorted(rianfall_data, key=lambda x: x['RAINGAUGE_CODE']),
             lambda x: x['RAINGAUGE_NAME'],
