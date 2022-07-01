@@ -8,6 +8,10 @@ from labq.settings     import OPEN_API_SECRET_KEY
 
 
 class OpenApiDataView(APIView):
+    """
+    date : 2022-06-30
+    writer : 김동규
+    """
     def get(self, request):
         try:
             gu_name = request.GET.get('gu_name', None)  # 구 이름         
@@ -24,11 +28,10 @@ class OpenApiDataView(APIView):
             }
             
             # 하수관로 Open API 요청 시점 : 현 시점부터 1시간 전의 데이터('YYYY-MM-DD-HH')    
-            now = (datetime.datetime.now().strftime('%Y%m%d%H'))
             one_hour_before = (datetime.datetime.now() - datetime.timedelta(hours=1)).strftime('%Y%m%d%H')
             
-            sewer_pipe_open_api_url = f"http://openapi.seoul.go.kr:8088/{OPEN_API_SECRET_KEY}/json/DrainpipeMonitoringInfo/1/1000/{gubn_nam_set[gu_name]}/{one_hour_before}/{now}"
-            rainfall_api_url        = f"http://openapi.seoul.go.kr:8088/{OPEN_API_SECRET_KEY}/json/ListRainfallService/1/28/{gu_name}"
+            sewer_pipe_open_api_url = f"http://openapi.seoul.go.kr:8088/{OPEN_API_SECRET_KEY}/json/DrainpipeMonitoringInfo/1/1000/{gubn_nam_set[gu_name]}/{one_hour_before}/{one_hour_before}"
+            rainfall_api_url        = f"http://openapi.seoul.go.kr:8088/{OPEN_API_SECRET_KEY}/json/ListRainfallService/1/30/{gu_name}"
             
             sewer_pipe_res = json.loads(requests.get(sewer_pipe_open_api_url).content)
             rainfall_res   = json.loads(requests.get(rainfall_api_url).content)
@@ -40,11 +43,10 @@ class OpenApiDataView(APIView):
             rainfall_serializer   = RainFallSerializer(rainfall_datas, many=True)
             
             # 특정 구의 하수관로 평균 수위
-            total_avg_sewer_pipe_level = round(
-                                               statistics.mean(
-                                               [sewer_pipe_data['MEA_WAL']\
-                                               for sewer_pipe_data in sewer_pipe_serializer.data\
-                                               if int(sewer_pipe_data['MEA_YMD'][11:13]) < int(datetime.datetime.now().strftime('%H'))]), 3)
+            avg_water_level = round(
+                                    statistics.mean(
+                                    [sewer_pipe_data['MEA_WAL']\
+                                    for sewer_pipe_data in sewer_pipe_serializer.data]), 3)
 
             rainfall_sorted_data  = sorted(rainfall_serializer.data, key=operator.itemgetter('RAINGAUGE_NAME'))
             rainfall_grouped_data = itertools.groupby(rainfall_sorted_data, key=operator.itemgetter('RAINGAUGE_NAME'))
@@ -53,20 +55,20 @@ class OpenApiDataView(APIView):
             
             for key, group_data in rainfall_grouped_data:
                 result[key] = list(group_data)
-            
-            rainguage_info = []    
+                    
+            rainguage_info = []   
 
             # 특정 구의 raingauge별 총 강우량(합계)
             for key, datas in result.items():
                 sum_raingauge_rainfall = {key : {'sum_rainfall' : sum([data['RAINFALL10'] for data in datas\
-                                                                  if int(datetime.datetime.now().strftime('%H'))-1\
-                                                                     <= int(data['RECEIVE_TIME'][11:13])\
-                                                                     < int(datetime.datetime.now().strftime('%H'))])}}
+                                                                  if (datetime.datetime.now() - datetime.timedelta(hours=1)).strftime('%H')\
+                                                                      <= data['RECEIVE_TIME'][11:13]\
+                                                                      < datetime.datetime.now().strftime('%H')])}}
                 rainguage_info.append(sum_raingauge_rainfall)
             
             total_data = {
                 gu_name : {
-                    'totalavg_sewer_pipe_level' : total_avg_sewer_pipe_level,
+                    'avg_water_level' : avg_water_level,
                 },
                 'raingauge_info' : rainguage_info,
             }
