@@ -42,13 +42,14 @@ class SeoulTest(TestCase):
 			self.assertIsNotNone(rainguage_name)
 			self.assertIsNotNone(sum_rain_fall)
 
-	'''
-    date : 2022-06-30
-    writer : 전기원
-    '''
-
 	# view api의 우량계 리스트와 open api의 우량계 리스트가 동일한지 테스트하는 코드입니다.
 	def test_get_gauge(self):
+		
+		'''
+		date : 2022-06-30
+		writer : 전기원
+		'''
+  
 		gu_name = '종로구'
 
 		#view api의 우량계 리스트를 가져오는 코드입니다.
@@ -62,7 +63,7 @@ class SeoulTest(TestCase):
 		gauge_list = []
 		for info in response.data['data']['raingauge_info']:
       
-			# 데이터가 없다면 detail이 나옴. detail이 없을 경우, continue합니다.
+			# 데이터가 없다면 detail이 나옵니다. detail이 있어도 continue합니다.
 			if 'detail' in response.data: 
 				continue
 			gauge_list.append(info['raingauge_name'])
