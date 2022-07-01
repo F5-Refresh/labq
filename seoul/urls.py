@@ -1,5 +1,5 @@
 from django.urls import path
 
-from .views import SeoulSewerLevelRainFallView
+from .views import SeoulWaterLevelRainFallView
 
-urlpatterns = [path('/gu-search/<str:gu_name>', SeoulSewerLevelRainFallView.as_view())]
+urlpatterns = [path('/gu-search/<str:gu_name>', SeoulWaterLevelRainFallView.as_view())]
